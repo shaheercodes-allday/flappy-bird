@@ -41,7 +41,7 @@ class Bird(pg.sprite.Sprite):
 
     def player_input(self): 
         keys = pg.key.get_pressed()
-        if keys[pg.K_SPACE]: self.gravity = -5
+        if keys[pg.K_SPACE] and self.rect.y > 50: self.gravity = -5
 
     def apply_gravity(self):
         self.gravity += 0.5
@@ -68,7 +68,7 @@ class Obstacle(pg.sprite.Sprite):
             self.rect = self.image.get_rect(midbottom = (510, y_point - 450))
 
     def update(self):
-        self.rect.x -= 2
+        self.rect.x -= 5
         self.destroy()
 
     def destroy(self):
@@ -81,6 +81,7 @@ FPS = 60
 CLOCK = pg.time.Clock()
 PIPE_SPAWN_EVENT = pg.USEREVENT + 1
 FONT = pg.font.Font(os.path.join("font", "Xirod.otf"), 18)
+FONT_LARGE = pg.font.Font(os.path.join("font", "Xirod.otf"), 24)
 BACKGROUND = pg.transform.rotozoom(
     pg.image.load(
         os.path.join("game-objects", "background-day.png")
@@ -97,13 +98,14 @@ GROUND = pg.transform.rotozoom(
 # Variables
 running = True
 score = 0
+final_score = 0
 is_game_active = True 
 bird = pg.sprite.GroupSingle()
 bird.add(Bird())
 obstacles = pg.sprite.Group()
 
 pg.display.set_caption("Flappy Bird")
-pg.time.set_timer(PIPE_SPAWN_EVENT, 2800)
+pg.time.set_timer(PIPE_SPAWN_EVENT, 1700)
 
 while running:
     for event in pg.event.get():
@@ -114,7 +116,7 @@ while running:
             obstacles.add(Obstacle("upper", y_point))
             obstacles.add(Obstacle("lower", y_point))
         if event.type == pg.KEYDOWN:
-            if not is_game_active and event.key == pg.K_KP_ENTER:
+            if not is_game_active and event.key == pg.K_KP_ENTER or event.key == pg.K_RETURN:
                 is_game_active = True
                 obstacles.empty()
     
@@ -139,9 +141,21 @@ while running:
 
         if pg.sprite.spritecollide(bird.sprite, obstacles, False):
             is_game_active = False
-            score = 0
+            final_score = score
+            score = 0   
     else:
-        WIN.fill("blue")
+        WIN.fill("black")
+
+        final_score_surf = FONT_LARGE.render(f"Score: {int(final_score)}", True, "yellow")
+        WIN.blit(final_score_surf, (115, 200))
+        
+        restart_message_1 = FONT.render("Press Enter", True, "yellow")
+        restart_message_rect = restart_message_1.get_rect(center = (205, 500))
+        WIN.blit(restart_message_1, restart_message_rect)
+
+        restart_message_2 = FONT.render("to Play Again!", True, "yellow")
+        restart_message_rect = restart_message_2.get_rect(center = (205, 525))
+        WIN.blit(restart_message_2, restart_message_rect)
 
     pg.display.update()
     CLOCK.tick(FPS)
