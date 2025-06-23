@@ -56,6 +56,7 @@ class Bird(pg.sprite.Sprite):
 class Obstacle(pg.sprite.Sprite):
     def __init__(self, type, y_point):
         super().__init__()
+        self.passed = False
         if type == 'lower':
             self.image = pg.image.load(os.path.join("game-objects", "pipe-green.png")).convert_alpha()
             self.rect = self.image.get_rect(midbottom = (510, y_point))
@@ -79,6 +80,7 @@ WIN = pg.display.set_mode(WINDOW_SIZE)
 FPS = 60
 CLOCK = pg.time.Clock()
 PIPE_SPAWN_EVENT = pg.USEREVENT + 1
+FONT = pg.font.Font(os.path.join("font", "Xirod.otf"), 18)
 BACKGROUND = pg.transform.rotozoom(
     pg.image.load(
         os.path.join("game-objects", "background-day.png")
@@ -94,6 +96,8 @@ GROUND = pg.transform.rotozoom(
 
 # Variables
 running = True
+score = 0
+is_game_active = True 
 bird = pg.sprite.GroupSingle()
 bird.add(Bird())
 obstacles = pg.sprite.Group()
@@ -109,18 +113,37 @@ while running:
             y_point = randint(578, 738)
             obstacles.add(Obstacle("upper", y_point))
             obstacles.add(Obstacle("lower", y_point))
+        if event.type == pg.KEYDOWN:
+            if not is_game_active and event.key == pg.K_KP_ENTER:
+                is_game_active = True
+                obstacles.empty()
     
-    WIN.blit(BACKGROUND, (0, 0))
+    if is_game_active:
+        WIN.blit(BACKGROUND, (0, 0))
 
-    bird.draw(WIN)
-    bird.update()
+        bird.draw(WIN)
+        bird.update()
 
-    obstacles.draw(WIN)
-    obstacles.update()
+        obstacles.draw(WIN)
+        obstacles.update()
 
-    WIN.blit(GROUND, (0, 578))
+        for pipe in obstacles:
+            if not pipe.passed and pipe.rect.centerx < bird.sprite.rect.centerx:
+                pipe.passed = True
+                score += 0.5
+
+        WIN.blit(GROUND, (0, 578))
+
+        score_surf = FONT.render(f'Score: {int(score)}', True, (255, 255, 255))
+        WIN.blit(score_surf, (20, 20))
+
+        if pg.sprite.spritecollide(bird.sprite, obstacles, False):
+            is_game_active = False
+            score = 0
+    else:
+        WIN.fill("blue")
 
     pg.display.update()
     CLOCK.tick(FPS)
 
-pg.quit()
+pg.quit() 
