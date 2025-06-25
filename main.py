@@ -20,7 +20,7 @@ class Bird(pg.sprite.Sprite):
             ).convert_alpha(),
             0,
             1.5
-        )       
+        )
         bird_upflap = pg.transform.rotozoom(
             pg.image.load(
                 os.path.join("game-objects", "yellowbird-upflap.png")
@@ -100,6 +100,7 @@ running = True
 score = 0
 final_score = 0
 is_game_active = True 
+sky_offset = 0
 bird = pg.sprite.GroupSingle()
 bird.add(Bird())
 obstacles = pg.sprite.Group()
@@ -114,14 +115,21 @@ while running:
         if event.type == PIPE_SPAWN_EVENT:
             y_point = randint(578, 738)
             obstacles.add(Obstacle("upper", y_point))
+            
             obstacles.add(Obstacle("lower", y_point))
         if event.type == pg.KEYDOWN:
             if not is_game_active and event.key == pg.K_KP_ENTER or event.key == pg.K_RETURN:
                 is_game_active = True
+                bird.empty()
+                bird.add(Bird())
                 obstacles.empty()
     
     if is_game_active:
-        WIN.blit(BACKGROUND, (0, 0))
+        WIN.blit(BACKGROUND, (sky_offset, 0))
+        WIN.blit(BACKGROUND, (sky_offset + 410, 0))
+
+        sky_offset -= 1
+        if sky_offset <= -410: sky_offset = 0
 
         bird.draw(WIN)
         bird.update()
@@ -130,11 +138,12 @@ while running:
         obstacles.update()
 
         for pipe in obstacles:
-            if not pipe.passed and pipe.rect.centerx < bird.sprite.rect.centerx:
+            if not pipe.passed and pipe.rect.right < bird.sprite.rect.left:
                 pipe.passed = True
                 score += 0.5
 
-        WIN.blit(GROUND, (0, 578))
+        WIN.blit(GROUND, (sky_offset, 578))
+        WIN.blit(GROUND, (sky_offset + 410, 578))
 
         score_surf = FONT.render(f'Score: {int(score)}', True, (255, 255, 255))
         WIN.blit(score_surf, (20, 20))
@@ -143,6 +152,11 @@ while running:
             is_game_active = False
             final_score = score
             score = 0   
+
+        if bird.sprite.rect.bottom >= 578: 
+            is_game_active = False
+            final_score = score
+            score = 0
     else:
         WIN.fill("black")
 
